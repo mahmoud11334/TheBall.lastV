@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ball</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #606060, #808080);
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #mainScreen {
+            text-align: center;
+            position: relative;
+        }
+
+        .title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(255,255,255,0.8);
+            margin-bottom: 2rem;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255,255,255,0.8); }
+            to { text-shadow: 0 0 30px rgba(255,255,255,1); }
+        }
+
+        .button {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            min-width: 200px;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #ff6666, #dd1111);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #f0f0f0, #d0d0d0);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 90%;
+            max-height: 80%;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        #gameScreen {
+            background: linear-gradient(135deg, #606060, #808080);
+            flex-direction: column;
+        }
+
+        #gameCanvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #606060, #808080);
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #pauseButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4444ff, #0000cc);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        #pauseButton:hover {
+            background: linear-gradient(135deg, #6666ff, #1111dd);
+        }
+
+        #countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: white;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            display: none;
+            z-index: 999;
+        }
+
+        #motivationText {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            color: white;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            display: none;
+            z-index: 500;
+            pointer-events: none;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        #endScreen {
+            text-align: center;
+            color: white;
+        }
+
+        .score-board {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            margin: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .code-input {
+            margin: 20px 0;
+        }
+
+        .code-input input {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1rem;
+            margin-left: 10px;
+            width: 200px;
+        }
+
+        #version {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            font-size: 1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .button {
+                font-size: 1rem;
+                padding: 12px 24px;
+                min-width: 150px;
+            }
+
+            .game-ui {
+                font-size: 1.2rem;
+            }
+
+            #pauseButton {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+
+            #motivationText {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="mainScreen" class="screen active">
+            <h1 class="title">The Ball</h1>
+            <button class="button" onclick="startGame()">ابدء</button>
+            <div style="margin: 10px 0; color: white; font-size: 1rem;">ازاي العب؟</div>
+            <button class="button" onclick="showInstructions()">أأأدخل شووووف</button>
+            <button class="button" onclick="window.open('https://discord.gg/SYgjn82uWp', '_blank')">ديسكورد</button>
+            <button class="button" onclick="showHighScores()">افضل نتائج</button>
+            <div id="version">V5.8</div>
+        </div>
+
+        <div id="gameScreen" class="screen">
+            <div class="game-ui">
+                <div>Score: <span id="score">3</span></div>
+                <div>Time: <span id="timer">0</span>s</div>
+            </div>
+            <button id="pauseButton" onclick="pauseGame()">توقف</button>
+            <canvas id="gameCanvas"></canvas>
+            <div id="countdown"></div>
+            <div id="motivationText"></div>
+        </div>
+
+        <div id="endScreen" class="screen">
+            <div class="score-board">
+                <h2>انت خسرت يبطل</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p>Time Played: <span id="finalTime">0</span>s</p>
+                <div class="code-input">
+                    <label>Code: <input type="text" id="codeInput" placeholder="Enter code..."></label>
+                </div>
+                <button class="button" onclick="goHome()">Main Menu</button>
+                <button class="button" onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeInstructions()">&times;</span>
+            <h3>كيفية اللعب</h3>
+            <p>طريقة اللعبة سهلة جداً، أنت كرة، أي مربع تشوفه ابعد عنه عشان هيقلل من سكورك، وأي كرة خضراء خدها هتزود سكورك، بس لو سكورك وصل صفر هتخسر.</p>
+        </div>
+    </div>
+
+    <div id="highScoresModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeHighScores()">&times;</span>
+            <h3>أفضل النتائج</h3>
+            <ul id="highScoresList"></ul>
+        </div>
+    </div>
+
+    <div id="pauseModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="resumeGame()">&times;</span>
+            <h3>اللعبة متوقفة</h3>
+            <button class="button" onclick="resumeGame()">استمر</button>
+        </div>
+    </div>
+
+    <div id="codeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeCodeModal()">&times;</span>
+            <div id="codeMessage"></div>
+            <button id="discordButton" class="button" style="display: none;" onclick="window.open('https://discord.gg/SYgjn82uWp', '_blank')">ديسكورد</button>
+        </div>
+    </div>
+
+    <script>
+        var currentScreen = 'main';
+        var gameState = {
+            score: 3,
+            time: 0,
+            gameRunning: false,
+            player: { x: 0, y: 0, radius: 18 },
+            enemies: [],
+            powerups: [],
+            gameSpeed: 1,
+            originalColors: {
+                background: 'linear-gradient(135deg, #606060, #808080)',
+                player: 'white',
+                playerShadow: 'white',
+                enemy: '#ff4444',
+                powerup: '#44ff44',
+                powerupShadow: '#44ff44'
+            },
+            currentColors: {
+                background: 'linear-gradient(135deg, #606060, #808080)',
+                player: 'white',
+                playerShadow: 'white',
+                enemy: '#ff4444',
+                powerup: '#44ff44',
+                powerupShadow: '#44ff44'
+            },
+            originalDifficulty: {
+                enemySpeedMultiplier: 1,
+                powerupSpeedMultiplier: 1,
+                spawnChance: 0.5
+            },
+            difficulty: {
+                enemySpeedMultiplier: 1,
+                powerupSpeedMultiplier: 1,
+                spawnChance: 0.5
+            },
+            fixedDifficulty: false,
+            lastMotivation: '',
+            motivationTimer: null
+        };
+
+        var canvas, ctx;
+        var gameTimer;
+        var spawnTimer;
+        var isHacked = false;
+        var highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+
+        const motivations = [
+            'عاش',
+            'استمر',
+            'جاامد',
+            'انت الفاجر',
+            'انت مفيش منك',
+            'عاش الرجاله عااش',
+            'انت مهكر اللعبه بقا',
+            'مش ممكن',
+            'انت المطروش'
+        ];
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId + 'Screen').classList.add('active');
+            currentScreen = screenId;
+            applyColorChanges();
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').style.display = 'flex';
+        }
+
+        function closeInstructions() {
+            document.getElementById('instructionsModal').style.display = 'none';
+        }
+
+        function showHighScores() {
+            const modal = document.getElementById('highScoresModal');
+            const list = document.getElementById('highScoresList');
+            list.innerHTML = '';
+            highScores.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.textContent = `المركز ${index + 1}: ${score} ث`;
+                list.appendChild(li);
+            });
+            modal.style.display = 'flex';
+            document.body.style.pointerEvents = 'none';
+            modal.style.pointerEvents = 'auto';
+        }
+
+        function closeHighScores() {
+            document.getElementById('highScoresModal').style.display = 'none';
+            document.body.style.pointerEvents = 'auto';
+        }
+
+        function startGame() {
+            showScreen('game');
+            if (isHacked) {
+                gameState.score = 3000;
+                isHacked = false;
+            }
+            initGame();
+            applyColorChanges();
+        }
+
+        function goHome() {
+            showScreen('main');
+            resetGame();
+        }
+
+        function restartGame() {
+            resetGame();
+            startGame();
+        }
+
+        function resetGame() {
+            gameState.score = isHacked ? 3000 : 3;
+            gameState.time = 0;
+            gameState.gameRunning = false;
+            gameState.player = { x: 0, y: 0, radius: 18 };
+            gameState.enemies = [];
+            gameState.powerups = [];
+            gameState.gameSpeed = 1;
+            gameState.fixedDifficulty = false;
+            gameState.difficulty = { ...gameState.originalDifficulty };
+            gameState.lastMotivation = '';
+            clearInterval(gameTimer);
+            clearInterval(spawnTimer);
+            clearTimeout(gameState.motivationTimer);
+            applyColorChanges();
+        }
+
+        function initGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            gameState.player.x = canvas.width / 2;
+            gameState.player.y = canvas.height - 100;
+            gameState.gameRunning = true;
+            
+            gameTimer = setInterval(() => {
+                if (gameState.gameRunning) {
+                    gameState.time++;
+                    document.getElementById('timer').textContent = gameState.time;
+                    if (gameState.time % 50 === 0) {
+                        showMotivation();
+                    }
+                }
+            }, 1000);
+
+            spawnTimer = setInterval(spawnObjects, 500);
+            
+            setupControls();
+            gameLoop();
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const maxWidth = Math.min(400, window.innerWidth - 40);
+            const maxHeight = Math.min(600, window.innerHeight - 100);
+            
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
+            
+            if (gameState.player.x === 0) {
+                gameState.player.x = canvas.width / 2;
+                gameState.player.y = canvas.height - 100;
+            }
+            applyColorChanges();
+        }
+
+        function setupControls() {
+            var isDragging = false;
+            var touchStartX = 0;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                updatePlayerPosition(e.clientX);
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    updatePlayerPosition(e.clientX);
+                }
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                touchStartX = e.touches[0].clientX;
+                updatePlayerPosition(e.touches[0].clientX);
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (isDragging) {
+                    updatePlayerPosition(e.touches[0].clientX);
+                }
+            });
+
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                isDragging = false;
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' && gameState.player.x > gameState.player.radius) {
+                    gameState.player.x -= 20;
+                }
+                if (e.key === 'ArrowRight' && gameState.player.x < canvas.width - gameState.player.radius) {
+                    gameState.player.x += 20;
+                }
+            });
+        }
+
+        function updatePlayerPosition(clientX) {
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            
+            gameState.player.x = Math.max(gameState.player.radius, 
+                Math.min(canvas.width - gameState.player.radius, x));
+        }
+
+        function spawnObjects() {
+            if (!gameState.gameRunning) return;
+            
+            if (!gameState.fixedDifficulty) {
+                const level = Math.min(Math.floor(gameState.time / 30), 3);
+                gameState.difficulty.enemySpeedMultiplier = 1 + level * 0.5;
+                gameState.difficulty.powerupSpeedMultiplier = 1 + level * 0.3;
+                gameState.difficulty.spawnChance = Math.min(0.85, 0.5 + level * 0.1);
+            }
+
+            var spawnChance = gameState.difficulty.spawnChance;
+            
+            if (Math.random() < spawnChance) {
+                var sizes = [12, 22, 32, 40];
+                var selectedSize = sizes[Math.floor(Math.random() * sizes.length)];
+                var baseSpeed = 2 + (gameState.time / 20);
+                
+                gameState.enemies.push({
+                    x: Math.random() * (canvas.width - selectedSize) + selectedSize/2,
+                    moveX: (Math.random() - 0.5) * 2,
+                    y: -selectedSize/2,
+                    size: selectedSize,
+                    speed: (Math.random() * 3 + baseSpeed) * gameState.difficulty.enemySpeedMultiplier
+                });
+            }
+            
+            if (Math.random() < Math.max(0.2, 0.4 - (gameState.time / 200))) {
+                gameState.powerups.push({
+                    x: Math.random() * (canvas.width - 20) + 10,
+                    y: -10,
+                    radius: 10,
+                    speed: (Math.random() * 2 + 1 + (gameState.time / 50)) * gameState.difficulty.powerupSpeedMultiplier,
+                    glow: 0
+                });
+            }
+            
+            if (gameState.time > 0 && gameState.time % 15 === 0) {
+                for(var i = 0; i < 3; i++) {
+                    var size = 15 + Math.random() * 20;
+                    setTimeout(function() {
+                        if (gameState.gameRunning) {
+                            gameState.enemies.push({
+                                x: Math.random() * (canvas.width - size) + size/2,
+                                moveX: (Math.random() - 0.5) * 2,
+                                y: -size/2,
+                                size: size,
+                                speed: (4 + Math.random() * 4) * gameState.difficulty.enemySpeedMultiplier
+                            });
+                        }
+                    }, i * 200);
+                }
+            }
+        }
+
+        function gameLoop() {
+            if (!gameState.gameRunning) return;
+            
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            gameState.enemies.forEach((enemy, index) => {
+                enemy.y += enemy.speed;
+                enemy.x += enemy.moveX;
+                
+                if (enemy.y > canvas.height + 50) {
+                    gameState.enemies.splice(index, 1);
+                    return;
+                }
+                
+                const dist = Math.sqrt(
+                    Math.pow(gameState.player.x - enemy.x, 2) + 
+                    Math.pow(gameState.player.y - enemy.y, 2)
+                );
+                
+                if (dist < gameState.player.radius + enemy.size / 2) {
+                    gameState.enemies.splice(index, 1);
+                    gameState.score--;
+                    document.getElementById('score').textContent = gameState.score;
+                    
+                    if (gameState.score <= 0) {
+                        endGame();
+                    }
+                }
+            });
+            
+            gameState.powerups.forEach((powerup, index) => {
+                powerup.y += powerup.speed;
+                powerup.glow += 0.1;
+                
+                if (powerup.y > canvas.height + 50) {
+                    gameState.powerups.splice(index, 1);
+                    return;
+                }
+                
+                const dist = Math.sqrt(
+                    Math.pow(gameState.player.x - powerup.x, 2) + 
+                    Math.pow(gameState.player.y - powerup.y, 2)
+                );
+                
+                if (dist < gameState.player.radius + powerup.radius) {
+                    gameState.powerups.splice(index, 1);
+                    gameState.score++;
+                    document.getElementById('score').textContent = gameState.score;
+                }
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.style.background = gameState.currentColors.background;
+            
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = gameState.currentColors.playerShadow;
+            ctx.fillStyle = gameState.currentColors.player;
+            ctx.beginPath();
+            ctx.arc(gameState.player.x, gameState.player.y, gameState.player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = gameState.currentColors.enemy;
+            gameState.enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x - enemy.size/2, enemy.y - enemy.size/2, enemy.size, enemy.size);
+            });
+            
+            gameState.powerups.forEach(powerup => {
+                ctx.shadowBlur = 10 + Math.sin(powerup.glow) * 5;
+                ctx.shadowColor = gameState.currentColors.powerupShadow;
+                ctx.fillStyle = gameState.currentColors.powerup;
+                ctx.beginPath();
+                ctx.arc(powerup.x, powerup.y, powerup.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function endGame() {
+            gameState.gameRunning = false;
+            clearInterval(gameTimer);
+            clearInterval(spawnTimer);
+            clearTimeout(gameState.motivationTimer);
+            
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalTime').textContent = gameState.time;
+            
+            saveHighScore(gameState.time);
+            
+            showScreen('end');
+        }
+
+        function saveHighScore(time) {
+            highScores.push(time);
+            highScores.sort((a, b) => b - a);
+            highScores = highScores.slice(0, 5);
+            localStorage.setItem('highScores', JSON.stringify(highScores));
+        }
+
+        function pauseGame() {
+            gameState.gameRunning = false;
+            document.getElementById('pauseModal').style.display = 'flex';
+        }
+
+        function resumeGame() {
+            document.getElementById('pauseModal').style.display = 'none';
+            startCountdown();
+        }
+
+        function startCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            countdownEl.style.display = 'block';
+            let count = 3;
+            countdownEl.textContent = count;
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownEl.textContent = count;
+                } else {
+                    clearInterval(interval);
+                    countdownEl.style.display = 'none';
+                    gameState.gameRunning = true;
+                    gameLoop();
+                }
+            }, 1000);
+        }
+
+        function showMotivation() {
+            const motivationEl = document.getElementById('motivationText');
+            let newMotivation = motivations[Math.floor(Math.random() * motivations.length)];
+            while (newMotivation === gameState.lastMotivation) {
+                newMotivation = motivations[Math.floor(Math.random() * motivations.length)];
+            }
+            gameState.lastMotivation = newMotivation;
+            motivationEl.textContent = newMotivation;
+            motivationEl.style.display = 'block';
+            const canvasRect = canvas.getBoundingClientRect();
+            motivationEl.style.top = `${canvasRect.top + 10}px`;
+            motivationEl.style.right = `${window.innerWidth - canvasRect.right + 10}px`;
+            gameState.motivationTimer = setTimeout(() => {
+                motivationEl.style.display = 'none';
+            }, 3000);
+        }
+
+        function applyColorChanges() {
+            document.body.style.background = gameState.currentColors.background;
+            document.getElementById('gameScreen').style.background = gameState.currentColors.background;
+            if (canvas) {
+                canvas.style.background = gameState.currentColors.background;
+            }
+        }
+
+        function showCodeModal(message, showDiscordButton) {
+            const modal = document.getElementById('codeModal');
+            const messageEl = document.getElementById('codeMessage');
+            const discordButton = document.getElementById('discordButton');
+            messageEl.innerHTML = message;
+            discordButton.style.display = showDiscordButton ? 'block' : 'none';
+            modal.style.display = 'flex';
+        }
+
+        function closeCodeModal() {
+            document.getElementById('codeModal').style.display = 'none';
+        }
+
+        document.getElementById('codeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const code = e.target.value;
+                checkCode(code);
+            }
+        });
+
+        function checkCode(code) {
+            var message = '';
+            var showDiscordButton = false;
+            
+            if (code === '12355') {
+                message = 'عايز ايه؟';
+            } else if (code === '44') {
+                message = 'رقمي اهوو يجميييل 0155';
+            } else if (code === '99') {
+                message = 'تم تهكير جهازك';
+            } else if (code === '199') {
+                message = 'بترن علي الحكومه ليههh';
+            } else if (code === 'dis') {
+                message = '**دعوة :**<br>اهلا بك فـ ـي افضل سيرفر ماين كرافت البيدروك في الشرق الاوسط<br>(الســيرفر فـ ـي بدايــته)<br>اهــلا بلجميع<br><br>https://discord.gg/SYgjn82uWp';
+                showDiscordButton = true;
+            } else if (code === '994R') {
+                showSpecialMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === '1588') {
+                message = 'ايه يمستر ابراهيم عايز ايه';
+            } else if (code === 'wig') {
+                showWigMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'br') {
+                showBrMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'mar') {
+                showMarMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'bb') {
+                showBbMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'ful') {
+                showFulMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'foo') {
+                showFooMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'so') {
+                showSoMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'see') {
+                showSeeMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'far') {
+                showFarMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === '44r') {
+                show44rMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === '542') {
+                show542Message();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === '66') {
+                show66Message();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === '105') {
+                show105Message();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'yaso') {
+                showYasoMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'y99') {
+                showY99Message();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'meen') {
+                showMeenMessage();
+                document.getElementById('codeInput').value = '';
+                return;
+            } else if (code === 'dark') {
+                gameState.currentColors = {
+                    background: '#000000',
+                    player: '#ffffff',
+                    playerShadow: '#ffffff',
+                    enemy: gameState.originalColors.enemy,
+                    powerup: gameState.originalColors.powerup,
+                    powerupShadow: gameState.originalColors.powerupShadow
+                };
+                applyColorChanges();
+                message = 'Dark Mode ON';
+            } else if (code === 'hak') {
+                isHacked = true;
+                message = 'الكود دا بيهكر اللعبه ممكن متقدرش تخسر تاني!!';
+            } else if (code === 'sahl') {
+                gameState.difficulty = {
+                    enemySpeedMultiplier: 0.5,
+                    powerupSpeedMultiplier: 0.7,
+                    spawnChance: 0.3
+                };
+                gameState.fixedDifficulty = true;
+                message = 'هذا اسهل مستوي';
+            } else if (code === 'sa3b') {
+                gameState.difficulty = {
+                    enemySpeedMultiplier: 2,
+                    powerupSpeedMultiplier: 1.5,
+                    spawnChance: 0.9
+                };
+                gameState.fixedDifficulty = true;
+                message = 'هذا اصعب مستوي';
+            } else if (code === 'girl') {
+                gameState.currentColors = {
+                    background: 'linear-gradient(135deg, #ffc0cb, #800000)',
+                    player: '#ff69b4',
+                    playerShadow: '#ff69b4',
+                    enemy: '#800000',
+                    powerup: '#ffb6c1',
+                    powerupShadow: '#ffb6c1'
+                };
+                applyColorChanges();
+                message = 'you just Girl؟';
+            } else if (code === 'oasta') {
+                gameState.currentColors = { ...gameState.originalColors };
+                gameState.difficulty = { ...gameState.originalDifficulty };
+                gameState.fixedDifficulty = false;
+                isHacked = false;
+                applyColorChanges();
+                message = 'تمام اووي كداا';
+            } else {
+                message = 'ايه هوا اي هبد معكش كود متجربش';
+            }
+            
+            if (message) {
+                showCodeModal(message, showDiscordButton);
+                document.getElementById('codeInput').value = '';
+            }
+        }
+
+        function showSpecialMessage() {
+            const specialModal = document.createElement('div');
+            specialModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #000000 0%, #8b008b 25%, #000000 50%, #8b008b 75%, #000000 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: fadeIn 1s ease-in-out;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 50px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 30px;
+                backdrop-filter: blur(20px);
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                animation: slideUp 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif;">
+                    <span style="color: #8B0000;">Happy New</span> <span style="color: #000080;">Year</span>
+                </div>
+                <div style="font-size: clamp(1.5rem, 4vw, 3rem); font-weight: bold; margin-bottom: 30px; font-family: 'Arial Black', sans-serif;">
+                    <span style="color: #8B0000;">كل سنة</span> <span style="color: #000080;">وانتي طيبه</span>
+                </div>
+                <div style="font-size: clamp(1rem, 3vw, 1.5rem); color: white; margin-top: 40px; font-family: 'Arial', sans-serif;">
+                    هذه الرساله مخصوصه الي <span style="color: #8B0000; font-weight: bold; font-size: 1.3em; text-shadow: 0 0 10px #8B0000;">Raven</span>
+                </div>
+                <div style="font-size: clamp(2rem, 4vw, 3rem); color: #8B0000; font-weight: bold; margin-top: 20px; text-shadow: 0 0 15px #8B0000;">
+                    21
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,255,255,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(50px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            specialModal.appendChild(messageContent);
+            document.body.appendChild(specialModal);
+            
+            specialModal.addEventListener('click', function(e) {
+                if (e.target === specialModal) {
+                    specialModal.remove();
+                }
+            });
+        }
+
+        function showWigMessage() {
+            const wigModal = document.createElement('div');
+            wigModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff, #00ffff);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: gradientShift 5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 60px;
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 40px;
+                backdrop-filter: blur(15px);
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+                animation: spinIn 1s ease-out;
+                transform: rotate(0deg);
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.5rem, 6vw, 5rem); font-weight: bold; margin-bottom: 30px; font-family: 'Arial Black', sans-serif;">
+                    <span style="color: #ff00ff; text-shadow: 0 0 15px #ff00ff;">رنكك ايه</span> 
+                    <span style="color: #00ffff; text-shadow: 0 0 15px #00ffff;">في فالو يا نوووب</span>
+                </div>
+                <div style="font-size: clamp(1.2rem, 3vw, 2rem); color: white; font-family: 'Arial', sans-serif;">
+                    رنكك بلاستيك؟؟
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ff00ff;
+                    font-size: 35px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes gradientShift {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes spinIn {
+                    from { transform: rotate(-10deg) scale(0.8); opacity: 0; }
+                    to { transform: rotate(0deg) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            wigModal.appendChild(messageContent);
+            document.body.appendChild(wigModal);
+            
+            wigModal.addEventListener('click', function(e) {
+                if (e.target === wigModal) {
+                    wigModal.remove();
+                }
+            });
+        }
+
+        function showBrMessage() {
+            const brModal = document.createElement('div');
+            brModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #ff4500, #8b0000, #ff4500, #8b0000);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: firePulse 3s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 70px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 50px;
+                backdrop-filter: blur(10px);
+                border: 3px solid rgba(255, 69, 0, 0.4);
+                box-shadow: 0 10px 60px rgba(255, 69, 0, 0.7);
+                animation: bounceIn 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(3rem, 7vw, 6rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif;">
+                    <span style="color: #ff4500; text-shadow: 0 0 20px #ff4500;">ويجاعععع</span>
+                </div>
+                <div style="font-size: clamp(1.5rem, 4vw, 2.5rem); color: white; font-family: 'Arial', sans-serif;">
+                    لاء عادي مفيش
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ff4500;
+                    font-size: 35px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255, 69, 0, 0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes firePulse {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes bounceIn {
+                    from { transform: scale(0.7); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            brModal.appendChild(messageContent);
+            document.body.appendChild(brModal);
+            
+            brModal.addEventListener('click', function(e) {
+                if (e.target === brModal) {
+                    brModal.remove();
+                }
+            });
+        }
+
+        function showMarMessage() {
+            const marModal = document.createElement('div');
+            marModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #001f3f, #ffcc00, #001f3f, #ffcc00);
+                background-size: 400% 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: nightSky 6s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 50px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 30px;
+                backdrop-filter: blur(20px);
+                border: 2px solid rgba(255, 204, 0, 0.3);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                animation: fadeSlide 1.2s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #ffcc00; text-shadow: 0 0 15px #ffcc00;">
+                    لما الشمس تروح ويجي مكانها نجوم يبقى دا وقت ايه؟؟
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffcc00;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,204,0,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes nightSky {
+                    0% { background-position: 0% 0%; }
+                    50% { background-position: 100% 100%; }
+                    100% { background-position: 0% 0%; }
+                }
+                @keyframes fadeSlide {
+                    from { transform: translateY(-50px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            marModal.appendChild(messageContent);
+            document.body.appendChild(marModal);
+            
+            marModal.addEventListener('click', function(e) {
+                if (e.target === marModal) {
+                    marModal.remove();
+                }
+            });
+        }
+
+        function showBbMessage() {
+            const bbModal = document.createElement('div');
+            bbModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #4b0082, #ff1493, #4b0082, #ff1493);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: purplePulse 4s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 60px;
+                background: rgba(255, 255, 255, 0.12);
+                border-radius: 35px;
+                backdrop-filter: blur(18px);
+                border: 3px solid rgba(255, 20, 147, 0.35);
+                box-shadow: 0 18px 55px rgba(0, 0, 0, 0.55);
+                animation: rotateFade 1.1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(1.8rem, 4.5vw, 3.5rem); font-weight: bold; margin-bottom: 25px; font-family: 'Arial Black', sans-serif; color: #ff1493; text-shadow: 0 0 12px #ff1493;">
+                    مش عارف اكتبلك ايه تاني بس عشان معرفش عنك حاجات كتيره بس انتي حد كويس والله
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ff1493;
+                    font-size: 32px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 12px rgba(255,20,147,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes purplePulse {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes rotateFade {
+                    from { transform: rotate(5deg) scale(0.9); opacity: 0; }
+                    to { transform: rotate(0deg) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            bbModal.appendChild(messageContent);
+            document.body.appendChild(bbModal);
+            
+            bbModal.addEventListener('click', function(e) {
+                if (e.target === bbModal) {
+                    bbModal.remove();
+                }
+            });
+        }
+
+        function showFulMessage() {
+            const fulModal = document.createElement('div');
+            fulModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #228b22, #ffd700, #228b22, #ffd700);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: goldGreen 5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 55px;
+                background: rgba(255, 255, 255, 0.18);
+                border-radius: 45px;
+                backdrop-filter: blur(12px);
+                border: 3px solid rgba(255, 215, 0, 0.4);
+                box-shadow: 0 12px 45px rgba(0, 0, 0, 0.65);
+                animation: bounceFade 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #ffd700; text-shadow: 0 0 18px #ffd700;">
+                    عايز رول حلو كدا يفلاوله بلحب يعني خليكي حلوه كد و هاتي رول
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffd700;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,215,0,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes goldGreen {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes bounceFade {
+                    from { transform: scale(0.85); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            fulModal.appendChild(messageContent);
+            document.body.appendChild(fulModal);
+            
+            fulModal.addEventListener('click', function(e) {
+                if (e.target === fulModal) {
+                    fulModal.remove();
+                }
+            });
+        }
+
+        function showFooMessage() {
+            const fooModal = document.createElement('div');
+            fooModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #00bfff, #ff4500, #00bfff, #ff4500);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: orangeBlue 4.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 65px;
+                background: rgba(255, 255, 255, 0.14);
+                border-radius: 38px;
+                backdrop-filter: blur(16px);
+                border: 3px solid rgba(0, 191, 255, 0.32);
+                box-shadow: 0 16px 52px rgba(0, 0, 0, 0.58);
+                animation: slideRotate 1.3s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(1.9rem, 4.8vw, 3.8rem); font-weight: bold; margin-bottom: 22px; font-family: 'Arial Black', sans-serif; color: #00bfff; text-shadow: 0 0 14px #00bfff;">
+                    بصي مش عارف اكتبلك ايه تاني بس انتي حد كويس يعني ربنا يكرمك
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #00bfff;
+                    font-size: 33px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 11px rgba(0,191,255,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes orangeBlue {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes slideRotate {
+                    from { transform: translateX(-30px) rotate(-3deg); opacity: 0; }
+                    to { transform: translateX(0) rotate(0deg); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            fooModal.appendChild(messageContent);
+            document.body.appendChild(fooModal);
+            
+            fooModal.addEventListener('click', function(e) {
+                if (e.target === fooModal) {
+                    fooModal.remove();
+                }
+            });
+        }
+
+        function showSoMessage() {
+            const soModal = document.createElement('div');
+            soModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #8b4513, #ffdab9, #8b4513, #ffdab9);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: brownPeach 5.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 50px;
+                background: rgba(255, 255, 255, 0.16);
+                border-radius: 32px;
+                backdrop-filter: blur(14px);
+                border: 3px solid rgba(255, 218, 185, 0.38);
+                box-shadow: 0 14px 48px rgba(0, 0, 0, 0.62);
+                animation: fadeBounce 1.2s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.2rem, 5.5vw, 4.5rem); font-weight: bold; margin-bottom: 25px; font-family: 'Arial Black', sans-serif; color: #ffdab9; text-shadow: 0 0 16px #ffdab9;">
+                    قومي ذكري بقا
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffdab9;
+                    font-size: 31px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 9px rgba(255,218,185,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes brownPeach {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes fadeBounce {
+                    from { transform: translateY(40px) scale(0.95); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            soModal.appendChild(messageContent);
+            document.body.appendChild(soModal);
+            
+            soModal.addEventListener('click', function(e) {
+                if (e.target === soModal) {
+                    soModal.remove();
+                }
+            });
+        }
+
+        function showSeeMessage() {
+            const seeModal = document.createElement('div');
+            seeModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #20b2aa, #ff69b4, #20b2aa, #ff69b4);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: tealPink 4s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 70px;
+                background: rgba(255, 255, 255, 0.13);
+                border-radius: 42px;
+                backdrop-filter: blur(17px);
+                border: 3px solid rgba(32, 178, 170, 0.34);
+                box-shadow: 0 17px 53px rgba(0, 0, 0, 0.57);
+                animation: spinBounce 1.4s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.1rem, 5.2vw, 4.2rem); font-weight: bold; margin-bottom: 23px; font-family: 'Arial Black', sans-serif; color: #20b2aa; text-shadow: 0 0 13px #20b2aa;">
+                    لاء بجد كد راحه كتير قومي ذكري يستي
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #20b2aa;
+                    font-size: 34px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 12px rgba(32,178,170,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes tealPink {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes spinBounce {
+                    from { transform: rotate(4deg) scale(0.92); opacity: 0; }
+                    to { transform: rotate(0deg) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            seeModal.appendChild(messageContent);
+            document.body.appendChild(seeModal);
+            
+            seeModal.addEventListener('click', function(e) {
+                if (e.target === seeModal) {
+                    seeModal.remove();
+                }
+            });
+        }
+
+        function showFarMessage() {
+            const farModal = document.createElement('div');
+            farModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #556b2f, #f4a460, #556b2f, #f4a460);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: oliveSandy 6s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 60px;
+                background: rgba(255, 255, 255, 0.17);
+                border-radius: 36px;
+                backdrop-filter: blur(13px);
+                border: 3px solid rgba(244, 164, 96, 0.37);
+                box-shadow: 0 13px 47px rgba(0, 0, 0, 0.63);
+                animation: slideFadeIn 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.3rem, 5.8vw, 4.8rem); font-weight: bold; margin-bottom: 26px; font-family: 'Arial Black', sans-serif; color: #f4a460; text-shadow: 0 0 17px #f4a460;">
+                    اخويا يعمممم
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #f4a460;
+                    font-size: 32px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(244,164,96,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes oliveSandy {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes slideFadeIn {
+                    from { transform: translateX(50px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            farModal.appendChild(messageContent);
+            document.body.appendChild(farModal);
+            
+            farModal.addEventListener('click', function(e) {
+                if (e.target === farModal) {
+                    farModal.remove();
+                }
+            });
+        }
+
+        function show44rMessage() {
+            const r44Modal = document.createElement('div');
+            r44Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #191970, #ff8c00, #191970, #ff8c00);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: navyOrange 5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 65px;
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 40px;
+                backdrop-filter: blur(15px);
+                border: 3px solid rgba(25, 25, 112, 0.4);
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+                animation: fadeRotate 1.1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #ff8c00; text-shadow: 0 0 15px #ff8c00;">
+                    معرفش اكتبلك ايه تاني بس انت اخويا يعني بحبك فـ الله
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ff8c00;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,140,0,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes navyOrange {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes fadeRotate {
+                    from { transform: rotate(-5deg); opacity: 0; }
+                    to { transform: rotate(0deg); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            r44Modal.appendChild(messageContent);
+            document.body.appendChild(r44Modal);
+            
+            r44Modal.addEventListener('click', function(e) {
+                if (e.target === r44Modal) {
+                    r44Modal.remove();
+                }
+            });
+        }
+
+        function show542Message() {
+            const m542Modal = document.createElement('div');
+            m542Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #2f4f4f, #00ff7f, #2f4f4f, #00ff7f);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: slateGreen 4.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 55px;
+                background: rgba(255, 255, 255, 0.19);
+                border-radius: 44px;
+                backdrop-filter: blur(11px);
+                border: 3px solid rgba(0, 255, 127, 0.42);
+                box-shadow: 0 11px 44px rgba(0, 0, 0, 0.66);
+                animation: bounceSlide 1.3s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.4rem, 6vw, 5rem); font-weight: bold; margin-bottom: 27px; font-family: 'Arial Black', sans-serif; color: #00ff7f; text-shadow: 0 0 18px #00ff7f;">
+                    انت تيجي واتس بقا
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #00ff7f;
+                    font-size: 35px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 13px rgba(0,255,127,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slateGreen {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes bounceSlide {
+                    from { transform: translateY(-30px) scale(0.88); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            m542Modal.appendChild(messageContent);
+            document.body.appendChild(m542Modal);
+            
+            m542Modal.addEventListener('click', function(e) {
+                if (e.target === m542Modal) {
+                    m542Modal.remove();
+                }
+            });
+        }
+
+        function show66Message() {
+            const m66Modal = document.createElement('div');
+            m66Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #8b0000, #ffd700, #8b0000, #ffd700);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: darkRedGold 5.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 60px;
+                background: rgba(255, 255, 255, 0.11);
+                border-radius: 34px;
+                backdrop-filter: blur(19px);
+                border: 3px solid rgba(139, 0, 0, 0.36);
+                box-shadow: 0 19px 56px rgba(0, 0, 0, 0.54);
+                animation: rotateBounce 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(1.7rem, 4.2vw, 3.2rem); font-weight: bold; margin-bottom: 18px; font-family: 'Arial Black', sans-serif; color: #ffd700; text-shadow: 0 0 11px #ffd700;">
+                    مش عارف اكتبلك ايه صراحه بس علميني اللعبه
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffd700;
+                    font-size: 29px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 8px rgba(255,215,0,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes darkRedGold {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes rotateBounce {
+                    from { transform: rotate(3deg) scale(0.96); opacity: 0; }
+                    to { transform: rotate(0deg) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            m66Modal.appendChild(messageContent);
+            document.body.appendChild(m66Modal);
+            
+            m66Modal.addEventListener('click', function(e) {
+                if (e.target === m66Modal) {
+                    m66Modal.remove();
+                }
+            });
+        }
+
+        function show105Message() {
+            const m105Modal = document.createElement('div');
+            m105Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #4169e1, #fffacd, #4169e1, #fffacd);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+z-index: 9999;
+                animation: brownPeach 5.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 50px;
+                background: rgba(255, 255, 255, 0.16);
+                border-radius: 32px;
+                backdrop-filter: blur(14px);
+                border: 3px solid rgba(255, 218, 185, 0.38);
+                box-shadow: 0 14px 48px rgba(0, 0, 0, 0.62);
+                animation: fadeBounce 1.2s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.2rem, 5.5vw, 4.5rem); font-weight: bold; margin-bottom: 25px; font-family: 'Arial Black', sans-serif; color: #ffdab9; text-shadow: 0 0 16px #ffdab9;">
+                    قومي ذكري بقا
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffdab9;
+                    font-size: 31px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 9px rgba(255,218,185,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes brownPeach {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes fadeBounce {
+                    from { transform: translateY(40px) scale(0.95); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            soModal.appendChild(messageContent);
+            document.body.appendChild(soModal);
+            
+            soModal.addEventListener('click', function(e) {
+                if (e.target === soModal) {
+                    soModal.remove();
+                }
+            });
+        }
+
+        function showSeeMessage() {
+            const seeModal = document.createElement('div');
+            seeModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #20b2aa, #ff69b4, #20b2aa, #ff69b4);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: tealPink 4s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 70px;
+                background: rgba(255, 255, 255, 0.13);
+                border-radius: 42px;
+                backdrop-filter: blur(17px);
+                border: 3px solid rgba(32, 178, 170, 0.34);
+                box-shadow: 0 17px 53px rgba(0, 0, 0, 0.57);
+                animation: spinBounce 1.4s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.1rem, 5.2vw, 4.2rem); font-weight: bold; margin-bottom: 23px; font-family: 'Arial Black', sans-serif; color: #20b2aa; text-shadow: 0 0 13px #20b2aa;">
+                    لاء بجد كد راحه كتير قومي ذكري يستي
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #20b2aa;
+                    font-size: 34px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 12px rgba(32,178,170,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes tealPink {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes spinBounce {
+                    from { transform: rotate(4deg) scale(0.92); opacity: 0; }
+                    to { transform: rotate(0deg) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            seeModal.appendChild(messageContent);
+            document.body.appendChild(seeModal);
+            
+            seeModal.addEventListener('click', function(e) {
+                if (e.target === seeModal) {
+                    seeModal.remove();
+                }
+            });
+        }
+
+        function showFarMessage() {
+            const farModal = document.createElement('div');
+            farModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #556b2f, #f4a460, #556b2f, #f4a460);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: oliveSandy 6s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 60px;
+                background: rgba(255, 255, 255, 0.17);
+                border-radius: 36px;
+                backdrop-filter: blur(13px);
+                border: 3px solid rgba(244, 164, 96, 0.37);
+                box-shadow: 0 13px 47px rgba(0, 0, 0, 0.63);
+                animation: slideFadeIn 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.3rem, 5.8vw, 4.8rem); font-weight: bold; margin-bottom: 26px; font-family: 'Arial Black', sans-serif; color: #f4a460; text-shadow: 0 0 17px #f4a460;">
+                    اخويا يعمممم
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #f4a460;
+                    font-size: 32px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(244,164,96,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes oliveSandy {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes slideFadeIn {
+                    from { transform: translateX(50px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            farModal.appendChild(messageContent);
+            document.body.appendChild(farModal);
+            
+            farModal.addEventListener('click', function(e) {
+                if (e.target === farModal) {
+                    farModal.remove();
+                }
+            });
+        }
+
+        function show44rMessage() {
+            const r44Modal = document.createElement('div');
+            r44Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #191970, #ff8c00, #191970, #ff8c00);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: navyOrange 5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 65px;
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 40px;
+                backdrop-filter: blur(15px);
+                border: 3px solid rgba(25, 25, 112, 0.4);
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+                animation: fadeRotate 1.1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #ff8c00; text-shadow: 0 0 15px #ff8c00;">
+                    معرفش اكتبلك ايه تاني بس انت اخويا يعني بحبك فـ الله
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ff8c00;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,140,0,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes navyOrange {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes fadeRotate {
+                    from { transform: rotate(-5deg); opacity: 0; }
+                    to { transform: rotate(0deg); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            r44Modal.appendChild(messageContent);
+            document.body.appendChild(r44Modal);
+            
+            r44Modal.addEventListener('click', function(e) {
+                if (e.target === r44Modal) {
+                    r44Modal.remove();
+                }
+            });
+        }
+
+        function show542Message() {
+            const m542Modal = document.createElement('div');
+            m542Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #2f4f4f, #00ff7f, #2f4f4f, #00ff7f);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: slateGreen 4.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 55px;
+                background: rgba(255, 255, 255, 0.19);
+                border-radius: 44px;
+                backdrop-filter: blur(11px);
+                border: 3px solid rgba(0, 255, 127, 0.42);
+                box-shadow: 0 11px 44px rgba(0, 0, 0, 0.66);
+                animation: bounceSlide 1.3s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2.4rem, 6vw, 5rem); font-weight: bold; margin-bottom: 27px; font-family: 'Arial Black', sans-serif; color: #00ff7f; text-shadow: 0 0 18px #00ff7f;">
+                    انت تيجي واتس بقا
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #00ff7f;
+                    font-size: 35px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 13px rgba(0,255,127,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slateGreen {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes bounceSlide {
+                    from { transform: translateY(-30px) scale(0.88); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            m542Modal.appendChild(messageContent);
+            document.body.appendChild(m542Modal);
+            
+            m542Modal.addEventListener('click', function(e) {
+                if (e.target === m542Modal) {
+                    m542Modal.remove();
+                }
+            });
+        }
+
+        function show66Message() {
+            const m66Modal = document.createElement('div');
+            m66Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #8b0000, #ffd700, #8b0000, #ffd700);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: darkRedGold 5.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 60px;
+                background: rgba(255, 255, 255, 0.11);
+                border-radius: 34px;
+                backdrop-filter: blur(19px);
+                border: 3px solid rgba(139, 0, 0, 0.36);
+                box-shadow: 0 19px 56px rgba(0, 0, 0, 0.54);
+                animation: rotateBounce 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(1.7rem, 4.2vw, 3.2rem); font-weight: bold; margin-bottom: 18px; font-family: 'Arial Black', sans-serif; color: #ffd700; text-shadow: 0 0 11px #ffd700;">
+                    مش عارف اكتبلك ايه صراحه بس علميني اللعبه
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffd700;
+                    font-size: 29px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 8px rgba(255,215,0,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes darkRedGold {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes rotateBounce {
+                    from { transform: rotate(3deg) scale(0.96); opacity: 0; }
+                    to { transform: rotate(0deg) scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            m66Modal.appendChild(messageContent);
+            document.body.appendChild(m66Modal);
+            
+            m66Modal.addEventListener('click', function(e) {
+                if (e.target === m66Modal) {
+                    m66Modal.remove();
+                }
+            });
+        }
+
+        function show105Message() {
+            const m105Modal = document.createElement('div');
+            m105Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #4169e1, #fffacd, #4169e1, #fffacd);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: royalLemon 6s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 70px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 48px;
+                backdrop-filter: blur(10px);
+                border: 3px solid rgba(65, 105, 225, 0.45);
+                box-shadow: 0 10px 60px rgba(0, 0, 0, 0.7);
+                animation: fadeInBounce 1.4s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #fffacd; text-shadow: 0 0 15px #fffacd;">
+                    بجد مش عارف اكتب ايه بس انتي حد كويس يعني ربنا يكرمك
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #fffacd;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,250,205,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes royalLemon {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes fadeInBounce {
+                    from { transform: scale(0.8); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            m105Modal.appendChild(messageContent);
+            document.body.appendChild(m105Modal);
+            
+            m105Modal.addEventListener('click', function(e) {
+                if (e.target === m105Modal) {
+                    m105Modal.remove();
+                }
+            });
+        }
+
+        function showYasoMessage() {
+            const yasoModal = document.createElement('div');
+            yasoModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #ff6347, #ffe4b5, #ff6347, #ffe4b5);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: tomatoMoccasin 4s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 50px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 30px;
+                backdrop-filter: blur(20px);
+                border: 2px solid rgba(255, 99, 71, 0.3);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                animation: slideUpRotate 1.2s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #ffe4b5; text-shadow: 0 0 15px #ffe4b5;">
+                    عايز رول حلوه كدا يـ يصمين بلحب
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffe4b5;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,228,181,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes tomatoMoccasin {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes slideUpRotate {
+                    from { transform: translateY(50px) rotate(2deg); opacity: 0; }
+                    to { transform: translateY(0) rotate(0deg); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            yasoModal.appendChild(messageContent);
+            document.body.appendChild(yasoModal);
+            
+            yasoModal.addEventListener('click', function(e) {
+                if (e.target === yasoModal) {
+                    yasoModal.remove();
+                }
+            });
+        }
+
+        function showY99Message() {
+            const y99Modal = document.createElement('div');
+            y99Modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #9932cc, #f0e68c, #9932cc, #f0e68c);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: orchidKhaki 5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 65px;
+                background: rgba(255, 255, 255, 0.14);
+                border-radius: 38px;
+                backdrop-filter: blur(16px);
+                border: 3px solid rgba(153, 50, 204, 0.32);
+                box-shadow: 0 16px 52px rgba(0, 0, 0, 0.58);
+                animation: fadeSpin 1.1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(1.8rem, 4.5vw, 3.5rem); font-weight: bold; margin-bottom: 25px; font-family: 'Arial Black', sans-serif; color: #f0e68c; text-shadow: 0 0 12px #f0e68c;">
+                    مش عارف عنك حاجه عشان اكتبهالك بس انتي حد كويس يعني و معا ضد عزازي اشطا
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #f0e68c;
+                    font-size: 32px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 12px rgba(240,230,140,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes orchidKhaki {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes fadeSpin {
+                    from { transform: rotate(6deg); opacity: 0; }
+                    to { transform: rotate(0deg); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            y99Modal.appendChild(messageContent);
+            document.body.appendChild(y99Modal);
+            
+            y99Modal.addEventListener('click', function(e) {
+                if (e.target === y99Modal) {
+                    y99Modal.remove();
+                }
+            });
+        }
+
+        function showMeenMessage() {
+            const meenModal = document.createElement('div');
+            meenModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(45deg, #008080, #ffdead, #008080, #ffdead);
+                background-size: 400%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: tealNavajo 4.5s ease infinite;
+            `;
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.cssText = `
+                text-align: center;
+                padding: 55px;
+                background: rgba(255, 255, 255, 0.18);
+                border-radius: 45px;
+                backdrop-filter: blur(12px);
+                border: 3px solid rgba(0, 128, 128, 0.4);
+                box-shadow: 0 12px 45px rgba(0, 0, 0, 0.65);
+                animation: bounceInFade 1s ease-out;
+            `;
+            
+            messageContent.innerHTML = `
+                <div style="font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; margin-bottom: 20px; font-family: 'Arial Black', sans-serif; color: #ffdead; text-shadow: 0 0 18px #ffdead;">
+                    بصي يـ يصمين انتي تمام خليكي ديما تمام
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    background: none;
+                    border: none;
+                    color: #ffdead;
+                    font-size: 30px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    text-shadow: 0 0 10px rgba(255,222,173,0.8);
+                ">&times;</button>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes tealNavajo {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes bounceInFade {
+                    from { transform: scale(0.9); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            meenModal.appendChild(messageContent);
+            document.body.appendChild(meenModal);
+            
+            meenModal.addEventListener('click', function(e) {
+                if (e.target === meenModal) {
+                    meenModal.remove();
+                }
+            });
+        }
+
+        function showCodeModal(message, showDiscordButton = false) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'flex';
+            
+            const content = document.createElement('div');
+            content.className = 'modal-content';
+            content.innerHTML = `
+                <span class="close-btn" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                <div style="margin: 20px 0; text-align: center; color: #333; line-height: 1.6;">
+                    ${message}
+                </div>
+                ${showDiscordButton ? '<button class="button" onclick="window.open(\'https://discord.gg/SYgjn82uWp\', \'_blank\')" style="margin-top: 15px;">ادخل</button>' : ''}
+            `;
+            
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            if (canvas) {
+                resizeCanvas();
+            }
+        });
+    </script>
+</body>
+</html>
